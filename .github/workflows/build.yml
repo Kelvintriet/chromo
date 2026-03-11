@@ -80,7 +80,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: chromo-${{ matrix.version }}-macos-app
-        path: @chromo/${{ matrix.version }}/Chromo*.app
+        path: chromo/${{ matrix.version }}/Chromo*.app
 
   build-windows:
     runs-on: windows-latest
@@ -105,7 +105,7 @@ jobs:
 
     - name: Build Chromo ${{ matrix.version }}
       run: |
-        cd @chromo/${{ matrix.version }}
+        cd chromo/${{ matrix.version }}
         if [ "${{ matrix.version }}" = "pro" ]; then
           bun install
           bun run build
@@ -116,7 +116,7 @@ jobs:
 
     - name: Prepare Windows executable for ${{ matrix.version }}
       run: |
-        cd @chromo/${{ matrix.version }}
+        cd chromo/${{ matrix.version }}
 
         # Rename executable for Windows (if not already .exe)
         if [ -f "chromo" ] && [ ! -f "chromo.exe" ]; then
@@ -128,7 +128,7 @@ jobs:
       with:
         name: chromo-${{ matrix.version }}-windows-exe
         path: |
-          @chromo/${{ matrix.version }}/chromo.exe
+          chromo/${{ matrix.version }}/chromo.exe
 
   build-linux:
     runs-on: ubuntu-latest
@@ -153,7 +153,7 @@ jobs:
 
     - name: Build Chromo ${{ matrix.version }}
       run: |
-        cd @chromo/${{ matrix.version }}
+        cd chromo/${{ matrix.version }}
         if [ "${{ matrix.version }}" = "pro" ]; then
           bun install
           bun run build
@@ -167,7 +167,7 @@ jobs:
       with:
         name: chromo-${{ matrix.version }}-linux-binary
         path: |
-          @chromo/${{ matrix.version }}/chromo
+          chromo/${{ matrix.version }}/chromo
 
   release:
     needs: [build-macos, build-windows, build-linux]
