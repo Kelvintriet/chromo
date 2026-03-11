@@ -17,8 +17,7 @@ deno.lock
 *.pkg
 *.deb
 *.rpm
-chromo
-chromolite
+
 
 # Chromo database and storage
 .chromo/
@@ -131,11 +130,11 @@ docs/build/
 # yarn.lock (keep for yarn projects)
 
 # Specific to Chromo projects
-@chromo/*/node_modules/
-@chromo/*/dist/
-@chromo/*/build/
-@chromo/*/.chromo/
-@chromo/*/chromo
-@chromo/*/chromo.exe
-@chromo/*/chromolite
-@chromo/*/chromolite.exe
+chromo/*/node_modules/
+chromo/*/dist/
+chromo/*/build/
+chromo/*/.chromo/
+chromo/*/chromo
+chromo/*/chromo.exe
+chromo/*/chromolite
+chromo/*/chromolite.exe
