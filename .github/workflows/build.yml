@@ -1,0 +1,200 @@
+name: Build Chromo CLI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [published]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        version: [lite, pro]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun (for Pro)
+      if: matrix.version == 'pro'
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Setup Deno (for Lite)
+      if: matrix.version == 'lite'
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+
+    - name: Build Chromo ${{ matrix.version }}
+      run: |
+        cd @chromo/${{ matrix.version }}
+        if [ "${{ matrix.version }}" = "pro" ]; then
+          bun install
+          bun run build
+        else
+          # For lite version, compile with Deno
+          deno compile --allow-all --output chromo index.ts
+        fi
+
+    - name: Create .app bundle for ${{ matrix.version }}
+      run: |
+        cd @chromo/${{ matrix.version }}
+        # Create app bundle structure
+        mkdir -p "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/MacOS"
+        mkdir -p "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/Resources"
+
+        # Copy executable
+        cp chromo "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/MacOS/"
+
+        # Create Info.plist
+        cat > "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/Info.plist" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>chromo</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.chromo.${{ matrix.version }}</string>
+    <key>CFBundleName</key>
+    <string>Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.12</string>
+</dict>
+</plist>
+EOF
+
+        # Make executable
+        chmod +x "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/MacOS/chromo"
+
+    - name: Upload macOS .app artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: chromo-${{ matrix.version }}-macos-app
+        path: @chromo/${{ matrix.version }}/Chromo*.app
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        version: [lite, pro]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun (for Pro)
+      if: matrix.version == 'pro'
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Setup Deno (for Lite)
+      if: matrix.version == 'lite'
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+
+    - name: Build Chromo ${{ matrix.version }}
+      run: |
+        cd @chromo/${{ matrix.version }}
+        if [ "${{ matrix.version }}" = "pro" ]; then
+          bun install
+          bun run build
+        else
+          # For lite version, compile with Deno
+          deno compile --allow-all --output chromo index.ts
+        fi
+
+    - name: Prepare Windows executable for ${{ matrix.version }}
+      run: |
+        cd @chromo/${{ matrix.version }}
+
+        # Rename executable for Windows (if not already .exe)
+        if [ -f "chromo" ] && [ ! -f "chromo.exe" ]; then
+          mv chromo chromo.exe
+        fi
+
+    - name: Upload Windows .exe artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: chromo-${{ matrix.version }}-windows-exe
+        path: |
+          @chromo/${{ matrix.version }}/chromo.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [lite, pro]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun (for Pro)
+      if: matrix.version == 'pro'
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
+
+    - name: Setup Deno (for Lite)
+      if: matrix.version == 'lite'
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+
+    - name: Build Chromo ${{ matrix.version }}
+      run: |
+        cd @chromo/${{ matrix.version }}
+        if [ "${{ matrix.version }}" = "pro" ]; then
+          bun install
+          bun run build
+        else
+          # For lite version, compile with Deno
+          deno compile --allow-all --output chromo index.ts
+        fi
+
+    - name: Upload Linux binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: chromo-${{ matrix.version }}-linux-binary
+        path: |
+          @chromo/${{ matrix.version }}/chromo
+
+  release:
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Create release archives
+      run: |
+        cd artifacts
+
+        # Create release archives for each platform and version
+        for version in lite pro; do
+          for platform in macos windows linux; do
+            if [ -d "chromo-${version}-${platform}-*" ]; then
+              tar -czf "chromo-${version}-${platform}.tar.gz" "chromo-${version}-${platform}-"*/
+            fi
+          done
+        done
+
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./artifacts/*.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
