@@ -40,6 +40,7 @@ jobs:
           # For lite version, compile with Deno
           deno compile --allow-all --output chromo index.ts
         fi
+      shell: bash
 
     - name: Create .app bundle for ${{ matrix.version }}
       run: |
@@ -75,12 +76,13 @@ jobs:
 
         # Make executable
         chmod +x "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/MacOS/chromo"
+      shell: bash
 
     - name: Upload macOS .app artifact
       uses: actions/upload-artifact@v4
       with:
         name: chromo-${{ matrix.version }}-macos-app
-        path: chromo/${{ matrix.version }}/Chromo*.app
+        path: "chromo/${{ matrix.version }}/Chromo*.app"
 
   build-windows:
     runs-on: windows-latest
@@ -113,6 +115,7 @@ jobs:
           # For lite version, compile with Deno
           deno compile --allow-all --output chromo index.ts
         fi
+      shell: bash
 
     - name: Prepare Windows executable for ${{ matrix.version }}
       run: |
@@ -122,13 +125,14 @@ jobs:
         if [ -f "chromo" ] && [ ! -f "chromo.exe" ]; then
           mv chromo chromo.exe
         fi
+      shell: bash
 
     - name: Upload Windows .exe artifact
       uses: actions/upload-artifact@v4
       with:
         name: chromo-${{ matrix.version }}-windows-exe
         path: |
-          chromo/${{ matrix.version }}/chromo.exe
+          "chromo/${{ matrix.version }}/chromo.exe"
 
   build-linux:
     runs-on: ubuntu-latest
@@ -161,13 +165,14 @@ jobs:
           # For lite version, compile with Deno
           deno compile --allow-all --output chromo index.ts
         fi
+      shell: bash
 
     - name: Upload Linux binary artifact
       uses: actions/upload-artifact@v4
       with:
         name: chromo-${{ matrix.version }}-linux-binary
         path: |
-          chromo/${{ matrix.version }}/chromo
+          "chromo/${{ matrix.version }}/chromo"
 
   release:
     needs: [build-macos, build-windows, build-linux]
