@@ -32,7 +32,7 @@ jobs:
 
     - name: Build Chromo ${{ matrix.version }}
       run: |
-        cd @chromo/${{ matrix.version }}
+        cd chromo/${{ matrix.version }}
         if [ "${{ matrix.version }}" = "pro" ]; then
           bun install
           bun run build
@@ -43,7 +43,7 @@ jobs:
 
     - name: Create .app bundle for ${{ matrix.version }}
       run: |
-        cd @chromo/${{ matrix.version }}
+        cd chromo/${{ matrix.version }}
         # Create app bundle structure
         mkdir -p "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/MacOS"
         mkdir -p "Chromo${{ matrix.version == 'pro' && ' Pro' || ' Lite' }}.app/Contents/Resources"
